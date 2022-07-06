@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <iostream>
 #include <iomanip>
+#include <fstream>
 #include <gf.hpp>
 
 using namespace std;
@@ -19,13 +20,14 @@ public:
     bool created=false;
 
     GFM(void);
-    void create(int r, int c);
     ~GFM();
+    void create(int r, int c);
     void show(void);
     GFM select_rows(const int* selected_rows, const int nums);
-    void add_row(const int row, const GFM* add);
+    void add_row(const int row, const GFM& add);
     void mul_row(const int row, const GF mul);
     void inverse(void);
+    GFM rdot(const GFM& b);
 };
 
 #endif

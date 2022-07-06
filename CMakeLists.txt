@@ -7,14 +7,25 @@ project(GF256-Erasure-Code)
 # 设置编译模式
 set(CMAKE_BUILD_TYPE "Debug")
 
-include_directories(inc/)
+set(run_path  ../run/)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG 	${run_path})
+
+include_directories(./inc/)
 
 # 添加一个可执行程序
 # 语法：add_executable( 程序名 源代码文件 ）
 add_executable(testbuild 
-    src/table.cpp 
-    src/gf.cpp 
-    src/gfm.cpp 
-    src/ec.cpp 
-    example/testbuild.cpp
+    ./src/table.cpp 
+    ./src/gf.cpp 
+    ./src/gfm.cpp 
+    ./src/ec.cpp 
+    ./example/testbuild.cpp
+)
+
+add_executable(testdecode
+    ./src/table.cpp 
+    ./src/gf.cpp 
+    ./src/gfm.cpp 
+    ./src/ec.cpp 
+    ./example/testdecode.cpp
 )

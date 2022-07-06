@@ -1,7 +1,7 @@
 #include <gfm.hpp>
 
+GFM::GFM(void){}
 
-GFM::GFM(){}
 
 GFM::~GFM(){
     if(created){
@@ -12,6 +12,7 @@ GFM::~GFM(){
 
 void GFM::create(int r, int c){
     R = r; C = c;
+    assert(R>0 && C>0);
     M = new GF* [R];
     for(int i=0; i<R; i++){
         M[i] = new GF [C];
@@ -48,11 +49,11 @@ GFM GFM::select_rows(const int* selected_rows, const int nums){
     return res;
 }
 
-void GFM::add_row(const int row, const GFM* add){
-    assert(add->R==1 && add->C==C);
+void GFM::add_row(const int row, const GFM& add){
+    assert(add.R==1 && add.C==C);
     assert(row < R && row >=0);
     for(int j=0; j<C; j++){
-        M[row][j] = M[row][j] + add->M[0][j];
+        M[row][j] = M[row][j] + add.M[0][j];
     }
     return;
 }
@@ -98,7 +99,7 @@ void GFM::inverse(){
                     sgfm.mul_row(0, one / adjoint.M[k][i]);
                     cout << "padding sgfm = " << endl;
                     sgfm.show();
-                    adjoint.add_row(i, &sgfm);
+                    adjoint.add_row(i, sgfm);
                     break;
                 }
             }
@@ -117,7 +118,7 @@ void GFM::inverse(){
             sgfm.mul_row(0, adjoint.M[k][i] / adjoint.M[i][i]);
             // cout << "sgfm k=" << k << endl;
             // sgfm.show();
-            adjoint.add_row(k, &sgfm);
+            adjoint.add_row(k, sgfm);
 
         }
 
@@ -131,4 +132,21 @@ void GFM::inverse(){
 
     cout << "final" << endl;
     adjoint.show();
+}
+
+GFM GFM::rdot(const GFM& b){
+    assert(created && b.created);
+    assert(R>0 && C>0 && b.C>0 && b.R>0);
+    assert(C == b.R);
+    GFM res; res.create(R, b.C);
+    for(int i=0; i<R; i++){
+        for(int j=0; j<b.C; j++){
+            GF me(0);
+            for(int k=0; k<C; k++){
+                me = me + M[i][k] * b.M[k][j];
+            }
+            res.M[i][j] = me;
+        }
+    }
+    return res;
 }
