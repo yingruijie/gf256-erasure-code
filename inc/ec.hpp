@@ -8,6 +8,10 @@
 
 #include <dirent.h>
 #include <regex>
+#include <time.h>
+
+#define BUFSIZE 256
+
 class EC{
 private:
     int N=0, K=0;
@@ -17,10 +21,10 @@ public:
     ~EC();
     void create_m(int m, int k);
 
-    void encode(const GFM& raw, int k, const char* shardsdir);
-    void write_shards(const GFM& shards, const char* shardsdir);
+    void encode(const GFM& raw, int k, const char* shardsroot);
+    void write_shards(const GFM& shards, const char* shardsroot);
 
-    void read_shards(const char* shardsdir);
+    void read_shards(const char* shardsroot, const char* shardsname);
     void decode(const GFM& shards);
     
 };

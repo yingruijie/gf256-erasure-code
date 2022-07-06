@@ -24,9 +24,10 @@ public:
     void create(int r, int c);
     void show(void);
     GFM select_rows(const int* selected_rows, const int nums);
+    GFM select_cols(const int* selected_cols, const int nums);
     void add_row(const int row, const GFM& add);
     void mul_row(const int row, const GF mul);
-    void inverse(void);
+    GFM inverse(void);
     GFM rdot(const GFM& b);
 };
 

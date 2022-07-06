@@ -5,7 +5,7 @@
 
 using namespace std;
 
-#define BUFSIZE 256
+
 
 GFM read_file(const char * filename){
     cout << "Get input file: " << filename << endl;
@@ -24,7 +24,7 @@ GFM read_file(const char * filename){
 	}
     cout << endl << "========" << endl;
     assert(len > 0);
-
+    fin.close();
     // 生成原始输入的GFM 列向量
     GFM raw; raw.create(len, 1);
     for(int i=0; i< len; i++){

@@ -49,6 +49,23 @@ GFM GFM::select_rows(const int* selected_rows, const int nums){
     return res;
 }
 
+GFM GFM::select_cols(const int* selected_cols, const int nums){
+    assert(created);
+    for(int i=0; i<nums; i++){
+        for(int j=i+1; j<nums; j++){
+            assert(i != j);
+        }
+        assert(selected_cols[i] < C && selected_cols[i] >= 0);
+    }
+    GFM res; res.create(R, nums);
+    for(int i=0; i<R; i++){
+        for(int j=0; j<nums; j++){
+            res.M[i][j] = M[i][selected_cols[j]];
+        }
+    }
+    return res;
+}
+
 void GFM::add_row(const int row, const GFM& add){
     assert(add.R==1 && add.C==C);
     assert(row < R && row >=0);
@@ -66,9 +83,9 @@ void GFM::mul_row(const int row, const GF mul){
     return;
 }
 
-void GFM::inverse(){
+GFM GFM::inverse(){
     assert(created);
-    if(R!=C){cout << "R!=C"; return;}
+    if(R!=C){cout << "R!=C"; assert(R==C);}
     int N=R;
     // 伴随矩阵
     GFM adjoint; adjoint.create(N, 2*N);
@@ -131,7 +148,12 @@ void GFM::inverse(){
     }
 
     cout << "final" << endl;
-    adjoint.show();
+    // adjoint.show();
+    int cols[N];
+    for(int j=0; j<N;j++) cols[j] = N+j;
+    GFM res = adjoint.select_cols(cols, N);
+    res.show();
+    return res;
 }
 
 GFM GFM::rdot(const GFM& b){
