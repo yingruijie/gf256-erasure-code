@@ -7,8 +7,8 @@ int *L; /** 对数表 在GF256里面是256数组 */
 
 bool inited_table=false; /** 表是否已经被初始化 */
 
-/*
-    生成GF256的指数表和对数表
+/**
+* @brief 生成GF256的指数表和对数表
 */
 void get_table_256(void){
     int T = 256, PX=285;
@@ -26,8 +26,8 @@ void get_table_256(void){
     return;
 }
 
-/*
-    删除GF256的指数表和对数表
+/**
+* @brief 删除GF256的指数表和对数表
 */
 void destory_table_256(void){
     if(inited_table){
@@ -38,8 +38,8 @@ void destory_table_256(void){
     return;
 }
 
-/*
-    打印GF256的指数表和对数表
+/**
+* @brief 打印GF256的指数表和对数表
 */
 void print_table_256(void){
     int X = 8;

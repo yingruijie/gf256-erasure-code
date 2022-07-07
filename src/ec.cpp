@@ -1,7 +1,28 @@
 #include <ec.hpp>
 
-EC::EC(){}
+/**
+* @brief 创建EC
+*/
+EC::EC(void){
 
+}
+
+/**
+* @brief 析构EC
+*/
+EC::~EC(){
+    // 释放remain_indices内存
+    if(decoded) delete [] remain_indices;
+}
+
+
+/**
+* @brief 创建EC的Vandermonde矩阵
+* @param n 数据量 N
+* @param k 纠错容量 K
+* @exception N: (0, 100) 否则报错
+* @exception K: (0, 50)  否则报错
+*/
 void EC::create_m(int n,int k){
     N=n; K=k;
     // 限制N K大小
@@ -25,6 +46,12 @@ void EC::create_m(int n,int k){
     M.show();
 }
 
+
+/**
+* @brief 读取原始数据并存在EC::raw中
+* @param filename 文件路径 例如 ./data/file/file0
+* @exception 路径存在且不为空文件
+*/
 void EC::read_file(const char * filename){
     cout << endl << "Input file path: " << endl << filename << endl;
     ifstream fin;
@@ -53,17 +80,33 @@ void EC::read_file(const char * filename){
 }
 
 
-
+/**
+* @brief 编码过程 M * raw = shards
+* @param k 纠错容量K 
+* @exception N: (0, 100) 否则报错
+* @exception K: (0, 50)  否则报错
+*/
 void EC::encode(int k){
     N = raw.R; K = k;
     assert(0<N && N<100 && 0<K && K<50);
+    // 创建矩阵
     create_m(N, K);
+    // 编码
     shards = M.rdot(raw);
     cout << endl << "Encoded shards: " << endl;
     shards.show();
     encoded = true;
 }
 
+
+/**
+* @brief 写入shards到指定目录 
+* @details 自动创建"%Y%m%d_%H%M%S"格式时间作为目录名
+* @details 保存时按照("%d_%d_%d", N_K_i)的格式对每个shard命名
+* @param shardsroot shards根目录
+* @exception 保证shardsroot可访问
+* @exception 必须先encode否则shards为空
+*/
 void EC::write_shards(const char* shardsroot){
     assert(encoded = true && shards.R>0 && shards.C==1);
     // 获取当前时间
@@ -93,7 +136,16 @@ void EC::write_shards(const char* shardsroot){
     }
 }
 
-
+/**
+* @brief 读取指定目录的shards并保存到EC::remain_shards
+* @details 读取时按照("%d_%d_%d", N_K_i)的格式对每个shard命名
+* @details 读取同时记录索引i到EC::remain_indices
+* @param shardsdir shards根目录
+* @exception 保证shardsdir可访问
+* @exception 每个shard的(N,K)必须相同 i->[0,N)且不重复
+* @exception 每个shard的大小为1个字节
+* @exception 剩余的数据量>=N 最终只读取N个shard
+*/
 void EC::read_shards(const char* shardsdir){
     cout << "Reading Shards... " << endl << shardsdir << endl;
     // 路径拼接
@@ -161,12 +213,16 @@ void EC::read_shards(const char* shardsdir){
     }
     closedir(dir);
 
-    int shardslen=i; N = shardsN; K = shardsK;
+    int shardslen=i; 
+    // 对 N K 赋值
+    N = shardsN; K = shardsK;
+    // 保证剩余的数据量shardslen>=N
     assert(N>0 && K>0 && shardslen>=N);
     remain_indices = new int [N];
 
     remain_shards.create(N, 1);
 
+    // 记录到EC中的数据结构
     for(i=0; i<N; i++){
         remain_indices[i] = indices_read[i];
         remain_shards.M[i][0] = buffer[i];
@@ -174,30 +230,40 @@ void EC::read_shards(const char* shardsdir){
 
 }
 
+/**
+* @brief 解码过程 Mi = 1/M, Mi * remain_shards = recover 
+* @details 从remain_indices作为行索引选出对应的M
+*/
 void EC::decode(){
     create_m(N, K);
 
-    // 根据索引选编码矩阵的行sgfm
+    // remain_indices作为行索引选编码矩阵的行sgfm
     GFM shardsgfm = M.select_rows(remain_indices, N);
 
-    
     cout << endl << "Remain shards: " << endl;
     remain_shards.show();
 
     cout << endl << "Remain shards M: " << endl; 
     shardsgfm.show();
     cout << endl << "Remain shards M inverse: " << endl; 
+    // 取逆矩阵
     GFM shardsgfmi = shardsgfm.inverse();
     shardsgfmi.show();
 
+    // 解码得到recover
     recover = shardsgfmi.rdot(remain_shards);
     cout << endl << "Recover: " << endl;
     recover.show();
 
-
+    decoded = true;
 }
 
+/**
+* @brief 把EC::revcover写到recoverpath
+* @param recoverpath shards根目录
+*/
 void EC::write_recover(const char* recoverpath){
+    // 转化为string可视化
     cout << endl << "To string: " << endl;
     char* recover_string = new char [N];
     for(int i=0; i<N; i++){
@@ -206,11 +272,9 @@ void EC::write_recover(const char* recoverpath){
     }
     cout << endl;
     cout << endl << "Write recover to: " << endl << recoverpath << endl;;
+    // 写入recoverpath
     fstream f;
     f.open(recoverpath, ios::out);
     for(int i=0; i<N; i++) f << recover_string[i];
     f.close();
-}
-
-EC::~EC(){
 }

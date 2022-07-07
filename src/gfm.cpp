@@ -1,8 +1,15 @@
 #include <gfm.hpp>
 
-GFM::GFM(void){}
+/**
+* @brief 创建GFM
+*/
+GFM::GFM(void){
 
+}
 
+/**
+* @brief 析构GFM 释放M的内存
+*/
 GFM::~GFM(){
     if(created){
         for(int i=0; i<R; i++) delete [] M[i];
@@ -10,6 +17,12 @@ GFM::~GFM(){
     }
 }
 
+/**
+* @brief 为矩阵GFM::M开辟二维空间
+* @param r 行数
+* @param c 列数
+* @exception r->(0, ) c->(0, )
+*/
 void GFM::create(int r, int c){
     R = r; C = c;
     assert(R>0 && C>0);
@@ -20,8 +33,11 @@ void GFM::create(int r, int c){
     created = true;
 }
 
-
-void GFM::show(){
+/**
+* @brief 可视化GFM
+* @exception 必须先create
+*/
+void GFM::show(void){
     assert(created);
     cout << "  col ";
     for(int j=0; j<C; j++){
@@ -43,6 +59,13 @@ void GFM::show(){
     return;
 }
 
+/**
+* @brief 选择GFM中的某几行
+* @param selected_rows 选择的行索引数组
+* @param nums 数组长度
+* @exception 必须先create
+* @exception selected_rows[i] -> [0, R) 且无重复
+*/
 GFM GFM::select_rows(const int* selected_rows, const int nums){
     assert(created);
     for(int i=0; i<nums; i++){
@@ -51,6 +74,7 @@ GFM GFM::select_rows(const int* selected_rows, const int nums){
         }
         assert(selected_rows[i] < R && selected_rows[i] >= 0);
     }
+    // 创建新的GFM大小为(nums, C)
     GFM res; res.create(nums, C);
     for(int i=0; i<nums; i++){
         for(int j=0; j<C; j++){
@@ -60,6 +84,13 @@ GFM GFM::select_rows(const int* selected_rows, const int nums){
     return res;
 }
 
+/**
+* @brief 选择GFM中的某几列
+* @param selected_rows 选择的列索引数组
+* @param nums 数组长度
+* @exception 必须先create
+* @exception selected_rows[j] -> [0, C) 且无重复
+*/
 GFM GFM::select_cols(const int* selected_cols, const int nums){
     assert(created);
     for(int i=0; i<nums; i++){
@@ -68,6 +99,7 @@ GFM GFM::select_cols(const int* selected_cols, const int nums){
         }
         assert(selected_cols[i] < C && selected_cols[i] >= 0);
     }
+    // 创建新的GFM大小为(R, nums)
     GFM res; res.create(R, nums);
     for(int i=0; i<R; i++){
         for(int j=0; j<nums; j++){
@@ -77,7 +109,14 @@ GFM GFM::select_cols(const int* selected_cols, const int nums){
     return res;
 }
 
+/**
+* @brief GFM中的某一行加上一个行向量 add
+* @param row 行索引 [0, R)
+* @param add 行向量 GFM且大小为(1, C)
+* @exception 必须先create
+*/
 void GFM::add_row(const int row, const GFM& add){
+    assert(created);
     assert(add.R==1 && add.C==C);
     assert(row < R && row >=0);
     for(int j=0; j<C; j++){
@@ -86,7 +125,14 @@ void GFM::add_row(const int row, const GFM& add){
     return;
 }
 
+/**
+* @brief GFM中的某一行乘上一个值 mul
+* @param row 行索引 [0, R)
+* @param mul 乘数 GF
+* @exception 必须先create
+*/
 void GFM::mul_row(const int row, const GF mul){
+    assert(created);
     assert(row < R && row >=0);
     for(int j=0; j<C; j++){
         M[row][j] = M[row][j] * mul;
@@ -94,11 +140,18 @@ void GFM::mul_row(const int row, const GF mul){
     return;
 }
 
-GFM GFM::inverse(){
+/**
+* @brief GFM用伴随矩阵的方法取逆
+* @exception 必须先create
+* @exception R==C
+* @exception GFM为可逆矩阵
+*/
+GFM GFM::inverse(void){
     assert(created);
     if(R!=C){cout << "R!=C"; assert(R==C);}
     int N=R;
-    // 伴随矩阵
+
+    // 生成伴随矩阵
     GFM adjoint; adjoint.create(N, 2*N);
     for(int i=0; i<N; i++){
         for(int j=0; j<N; j++){
@@ -111,15 +164,18 @@ GFM GFM::inverse(){
 
     // cout << "adjoint" << endl;
     // adjoint.show();
-
+    // 两个常用的数 0 1
     GF zero(0); GF one(1);
 
+    // 按行开始将伴随矩阵左边化为单位矩阵
     for(int i=0; i<N; i++){
         // cout << endl << "====Enter i = " << i << "=====" << endl;
+        // M[i][i]为0要向其它行找非0元素补上
         if(adjoint.M[i][i] == zero){
             // cout << "adjoint.M[" << i << "][ " << i << " ] == zero" << endl;
             for(int k=i+1; k<N; k++){
                 if(k==i) continue;
+                // 发现非0元素
                 if(adjoint.M[k][i] != zero){
                     // cout << "found adjoint.M[" << k << "][" << i << "] != zero" << endl;
                     int sl[1] = {k};
@@ -127,29 +183,33 @@ GFM GFM::inverse(){
                     sgfm.mul_row(0, one / adjoint.M[k][i]);
                     // cout << "padding sgfm = " << endl;
                     // sgfm.show();
+                    // 整行补上
                     adjoint.add_row(i, sgfm);
                     break;
                 }
             }
         }
+        // 找不到非0元素说明初始矩阵不可逆
         if(adjoint.M[i][i] == zero){
             cout << "error padding" << endl;
             assert(adjoint.M[i][i] == zero);
         }
         // cout << "after padding" << endl;
         // adjoint.show();
+        // 消去同i列的非0元素
         for(int k=0; k<N; k++){
             if(k==i) continue;
             if(adjoint.M[k][i] == zero) continue;
             int sl[1] = {i};
             GFM sgfm = adjoint.select_rows(sl, 1);
+            // 高斯消元法
             sgfm.mul_row(0, adjoint.M[k][i] / adjoint.M[i][i]);
             // cout << "sgfm k=" << k << endl;
             // sgfm.show();
             adjoint.add_row(k, sgfm);
 
         }
-
+        // 对角元素归一
         adjoint.mul_row(i, one/adjoint.M[i][i]);
 
         // cout << "i = " << i << " final" << endl;
@@ -160,6 +220,7 @@ GFM GFM::inverse(){
 
     // cout << "final" << endl;
     // adjoint.show();
+    // 取处理过后的伴随矩阵的右半边 即为原矩阵的逆
     int cols[N];
     for(int j=0; j<N;j++) cols[j] = N+j;
     GFM res = adjoint.select_cols(cols, N);
@@ -176,13 +237,21 @@ GFM GFM::inverse(){
             else if(i==j) assert(testinverse.M[i][j] == zero);
         }
     }
-
+    // 检验通过,结束
     return res;
 }
 
+/**
+* @brief GFM*b 左乘一个矩阵
+* @param b GFM 
+* @exception 必须先create
+* @exception C == b.R
+* @exception GFM为可逆矩阵
+*/
 GFM GFM::rdot(const GFM& b){
     assert(created && b.created);
     assert(R>0 && C>0 && b.C>0 && b.R>0);
+    // 保证两个矩阵可以相乘
     assert(C == b.R);
     GFM res; res.create(R, b.C);
     for(int i=0; i<R; i++){
@@ -197,6 +266,10 @@ GFM GFM::rdot(const GFM& b){
     return res;
 }
 
+/**
+* @brief 重定义"="操作为内存拷贝 避免同时指向同一内存区域
+* @param b GFM 
+*/
 void GFM::operator=(const GFM& b){
     if(b.created && created){
         for(int i=0; i<R; i++) delete [] M[i];
