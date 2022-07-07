@@ -75,7 +75,10 @@ void EC::encode(const GFM& raw, int k, const char* shardsroot){
     create_m(N, K);
     GFM shards = M.rdot(raw);
     cout << "Encoded shards: " << endl;
-    shards.show();
+    for(int i=0; i<N+K; i++){
+        cout << setw(3) << i << " " << setw(3) <<  shards.M[i][0].get_value() << endl;
+    }
+    // shards.show();
     write_shards(shards, shardsroot);
 }
 
@@ -93,7 +96,7 @@ void EC::read_shards(const char* shardsroot, const char* shardsname){
     assert((dir = opendir(shardsdir.c_str())) != nullptr);
 
     // 定义读取记录数组
-    int shardsN = 0, shardsK = 0, i = 0, indices_read[BUFSIZE]; 
+    int shardsN = 0, shardsK = 0, i=0, j=0, indices_read[BUFSIZE]; 
     GF buffer[BUFSIZE];
     memset(indices_read, 0, sizeof(int)*BUFSIZE);
 
@@ -103,14 +106,14 @@ void EC::read_shards(const char* shardsroot, const char* shardsname){
         string filename(diread->d_name);
         // 检查文件名是否为shards的格式
         bool ifmatch = regex_match(filename, shards_pattern);
-        cout << filename << " " << ifmatch << endl;
+        // cout << filename << " " << ifmatch << endl;
         if(ifmatch){
             regex integer_pattern("\\d+");
             smatch result;
             string::const_iterator iter_begin = filename.cbegin();
             string::const_iterator iter_end = filename.cend();
             
-            int n_k_i[3], j=0; memset(n_k_i, 0, 3*sizeof(int));
+            int n_k_i[3]; j=0; memset(n_k_i, 0, 3*sizeof(int));
             
             while (regex_search(iter_begin, iter_end, result, integer_pattern)){
                 string temp(result[0]); 
@@ -119,7 +122,7 @@ void EC::read_shards(const char* shardsroot, const char* shardsname){
                 iter_begin = result[0].second;
             }
             // 记录N K I
-            cout << "n_k_i " << n_k_i[0] << " " << n_k_i[1] << " " << n_k_i[2] << endl;
+            // cout << "n_k_i " << n_k_i[0] << " " << n_k_i[1] << " " << n_k_i[2] << endl;
             if(i==0){
                 shardsN = n_k_i[0]; shardsK = n_k_i[1];
             }
@@ -130,14 +133,14 @@ void EC::read_shards(const char* shardsroot, const char* shardsname){
 
             // 读取这个shard
             ifstream fin;
-            cout << "Read shard path: " << (shardsdir+filename).c_str()<< endl;
+            // cout << "Read shard path: " << (shardsdir+filename).c_str()<< endl;
             fin.open((shardsdir+filename).c_str());
             assert(fin.is_open());
             int thishardlen=0; char c[BUFSIZE];
             while((c[thishardlen++]=fin.get())!=EOF){
             }
             fin.close();
-            cout << "thishardlen " << thishardlen << endl;
+            // cout << "thishardlen " << thishardlen << endl;
             assert(thishardlen == 2); // 一次字符，一次EOF   
             
 
@@ -152,19 +155,46 @@ void EC::read_shards(const char* shardsroot, const char* shardsname){
     closedir(dir);
 
     int shardslen=i; N = shardsN; K = shardsK;
-    assert(N > 0 && shardslen >= N);
+    assert(N>0 && K>0 && shardslen>=N);
     int* indices = new int [N];
     GFM shards; shards.create(N, 1);
+
     for(i=0; i<N; i++){
         indices[i] = indices_read[i];
         shards.M[i][0] = buffer[i];
     }
-    create_m(N, K);
-    GFM sgfm = M.select_rows(indices, N);
 
-    GFM sgfmi = sgfm.inverse();
-    cout << "decode" << endl;
-    sgfmi.rdot(sgfm).show();
+
+    create_m(N, K);
+
+    // 根据索引选编码矩阵的行sgfm
+    GFM shardsgfm = M.select_rows(indices, N);
+
+    
+    cout << "ndx   sha  shardsgfm" << endl;
+    for(i=0; i<N; i++){
+        cout << setw(3) << indices[i] << "   " << setw(3) << shards.M[i][0].get_value();
+        for(j=0; j<N; j++){
+            cout << setw(3) << shardsgfm.M[i][j].get_value() << " ";
+        }
+        cout << endl;
+    }
+    
+
+    cout << "shardsgfm = " << endl; 
+    shardsgfm.show();
+    cout << "shardsgfmi = " << endl; 
+    GFM shardsgfmi = shardsgfm.inverse();
+    shardsgfmi.show();
+
+    GFM res = shardsgfmi.rdot(shards);
+    cout << "decode result:" << endl;
+    res.show();
+    cout << "to string: " << endl;
+    for(i=0; i<N; i++){
+        cout << (char)res.M[i][0].get_value();
+    }
+    cout << endl;
 }
 
 EC::~EC(){

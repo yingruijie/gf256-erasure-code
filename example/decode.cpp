@@ -1,43 +1,22 @@
-#include <string>
 #include <iostream>
-#include <vector>
-#include <dirent.h>
-#include <regex>
+#include <table.hpp>
+#include <gf.hpp>
+#include <ec.hpp>
 
 
 using namespace std;
 
-int main() {
-    DIR *dir; struct dirent *diread;
-
-    regex r("\\d+_\\d+_\\d+");
-
-    if ((dir = opendir("../run/data/shards/")) != nullptr) {
-        while ((diread = readdir(dir)) != nullptr) {;
-            string filename(diread->d_name);
-            bool ifmatch = regex_match(filename, r);
-            cout << filename << " " << ifmatch << endl;
-            if(ifmatch){
-                regex pattern("\\d+");
-                smatch result;
-                string::const_iterator iter_begin = filename.cbegin();
-                string::const_iterator iter_end = filename.cend();
-                while (regex_search(iter_begin, iter_end, result, pattern)){
-                    cout << "查找成功：" << result[0] << endl;
-                    // cout << "查找结果子串的在源串中的迭代器位置" << *result[0].first << endl;
-                    // cout << "查找结果子串的在源串后面的位置" << *result[0].second << endl;
-                    iter_begin = result[0].second;	//更新迭代器位置
-                }
-            }
-        }
-        closedir (dir);
-    } else {
-        perror("opendir");
-        return EXIT_FAILURE;
+int main(int argc, char **argv){
+    if(argc!=2){
+        cout << "Usage: ./decode 20220707_105758";
+        return 0;
     }
-
-    // for (auto file : files) cout << file << "| ";
-    // cout << endl;
-
-    return EXIT_SUCCESS;
+    get_table_256();
+    
+    string shardsdir("./data/shards/");
+    EC ec;
+    ec.read_shards(shardsdir.c_str(), argv[1]);
+    
+    destory_table_256();
+    return 0;
 }

@@ -19,7 +19,7 @@ private:
 public:
     EC();
     ~EC();
-    void create_m(int m, int k);
+    void create_m(int n, int k);
 
     void encode(const GFM& raw, int k, const char* shardsroot);
     void write_shards(const GFM& shards, const char* shardsroot);

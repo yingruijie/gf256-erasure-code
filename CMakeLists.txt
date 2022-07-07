@@ -14,18 +14,26 @@ include_directories(./inc/)
 
 # 添加一个可执行程序
 # 语法：add_executable( 程序名 源代码文件 ）
-add_executable(testbuild 
+add_executable(encode
     ./src/table.cpp 
     ./src/gf.cpp 
     ./src/gfm.cpp 
     ./src/ec.cpp 
-    ./example/testbuild.cpp
+    ./example/encode.cpp
 )
 
-add_executable(testdecode
+add_executable(decode
     ./src/table.cpp 
     ./src/gf.cpp 
     ./src/gfm.cpp 
     ./src/ec.cpp 
-    ./example/testdecode.cpp
+    ./example/decode.cpp
+)
+
+add_executable(testec
+    ./src/table.cpp 
+    ./src/gf.cpp 
+    ./src/gfm.cpp 
+    ./src/ec.cpp 
+    ./example/testec.cpp
 )

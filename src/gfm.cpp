@@ -147,12 +147,25 @@ GFM GFM::inverse(){
 
     }
 
-    cout << "final" << endl;
+    // cout << "final" << endl;
     // adjoint.show();
     int cols[N];
     for(int j=0; j<N;j++) cols[j] = N+j;
     GFM res = adjoint.select_cols(cols, N);
+    cout << "inverse = " << endl;
     res.show();
+
+    // 与原矩阵相乘，检查是否为单位阵
+    GFM testinverse = rdot(res);
+    cout << "testinverse = " << endl;
+    testinverse.show();
+    for(int i=0; i<N; i++){
+        for(int j=0; j<N; j++){
+            if(i==j) assert(testinverse.M[i][j] == one);
+            else if(i==j) assert(testinverse.M[i][j] == zero);
+        }
+    }
+
     return res;
 }
 

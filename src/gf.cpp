@@ -68,7 +68,7 @@ int GF::get_x_field(void)const{
 */
 GF GF::operator+(const GF& b){   
     GF c(
-        (this->V ^ b.get_value()) % (this->T-1)
+        (this->V ^ b.get_value()) % (this->T)
     ); 
     return c;
 }
@@ -80,7 +80,7 @@ GF GF::operator+(const GF& b){
 */
 GF GF::operator-(const GF& b){   
     GF c(
-        (this->V ^ b.get_value()) % (this->T-1)
+        (this->V ^ b.get_value()) % (this->T)
     ); 
     return c;
 }
