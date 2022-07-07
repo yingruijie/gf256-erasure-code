@@ -23,9 +23,20 @@ void GFM::create(int r, int c){
 
 void GFM::show(){
     assert(created);
+    cout << "  col ";
+    for(int j=0; j<C; j++){
+        cout << setw(3) << j << " ";
+    }
+    cout << endl;
+    cout << "row -";
+    for(int j=0; j<C; j++){
+        cout << "----";
+    }
+    cout << endl;
     for(int i=0; i<R; i++){
+        cout << setw(3) << i << " | ";
         for(int j=0; j<C; j++){
-            cout << setw(3) << M[i][j].get_value() << " "; 
+            cout << setw(3) << M[i][j].get_value() << " ";
         }
         cout << endl;
     }
@@ -98,24 +109,24 @@ GFM GFM::inverse(){
         }
     }
 
-    cout << "adjoint" << endl;
-    adjoint.show();
+    // cout << "adjoint" << endl;
+    // adjoint.show();
 
     GF zero(0); GF one(1);
 
     for(int i=0; i<N; i++){
-        cout << endl << "====Enter i = " << i << "=====" << endl;
+        // cout << endl << "====Enter i = " << i << "=====" << endl;
         if(adjoint.M[i][i] == zero){
-            cout << "adjoint.M[" << i << "][ " << i << " ] == zero" << endl;
+            // cout << "adjoint.M[" << i << "][ " << i << " ] == zero" << endl;
             for(int k=i+1; k<N; k++){
                 if(k==i) continue;
                 if(adjoint.M[k][i] != zero){
-                    cout << "found adjoint.M[" << k << "][" << i << "] != zero" << endl;
+                    // cout << "found adjoint.M[" << k << "][" << i << "] != zero" << endl;
                     int sl[1] = {k};
                     GFM sgfm = adjoint.select_rows(sl, 1);
                     sgfm.mul_row(0, one / adjoint.M[k][i]);
-                    cout << "padding sgfm = " << endl;
-                    sgfm.show();
+                    // cout << "padding sgfm = " << endl;
+                    // sgfm.show();
                     adjoint.add_row(i, sgfm);
                     break;
                 }
@@ -125,8 +136,8 @@ GFM GFM::inverse(){
             cout << "error padding" << endl;
             assert(adjoint.M[i][i] == zero);
         }
-        cout << "after padding" << endl;
-        adjoint.show();
+        // cout << "after padding" << endl;
+        // adjoint.show();
         for(int k=0; k<N; k++){
             if(k==i) continue;
             if(adjoint.M[k][i] == zero) continue;
@@ -141,9 +152,9 @@ GFM GFM::inverse(){
 
         adjoint.mul_row(i, one/adjoint.M[i][i]);
 
-        cout << "i = " << i << " final" << endl;
-        adjoint.show();
-        cout << "=====end of i = " << i << "=====" << endl << endl;
+        // cout << "i = " << i << " final" << endl;
+        // adjoint.show();
+        // cout << "=====end of i = " << i << "=====" << endl << endl;
 
     }
 
@@ -152,13 +163,13 @@ GFM GFM::inverse(){
     int cols[N];
     for(int j=0; j<N;j++) cols[j] = N+j;
     GFM res = adjoint.select_cols(cols, N);
-    cout << "inverse = " << endl;
-    res.show();
+    // cout << "Inverse = " << endl;
+    // res.show();
 
     // 与原矩阵相乘，检查是否为单位阵
     GFM testinverse = rdot(res);
-    cout << "testinverse = " << endl;
-    testinverse.show();
+    // cout << "testinverse = " << endl;
+    // testinverse.show();
     for(int i=0; i<N; i++){
         for(int j=0; j<N; j++){
             if(i==j) assert(testinverse.M[i][j] == one);
@@ -184,4 +195,36 @@ GFM GFM::rdot(const GFM& b){
         }
     }
     return res;
+}
+
+void GFM::operator=(const GFM& b){
+    if(b.created && created){
+        for(int i=0; i<R; i++) delete [] M[i];
+        delete [] M;
+        created = false;
+        for(int i=0; i<R; i++){
+            for(int j=0; j<C; j++){
+                M[i][j] = b.M[i][j];
+            }
+        }
+        return;
+    }
+    else if(!b.created && created){
+        for(int i=0; i<R; i++) delete [] M[i];
+        delete [] M;
+        R = 0; C=0;
+        return;
+    }
+    else if(b.created && !created){
+        create(b.R, b.C);
+        for(int i=0; i<R; i++){
+            for(int j=0; j<C; j++){
+                M[i][j] = b.M[i][j];
+            }
+        }
+        return;
+    }
+    else{
+        return;
+    }
 }

@@ -29,6 +29,7 @@ public:
     void mul_row(const int row, const GF mul);
     GFM inverse(void);
     GFM rdot(const GFM& b);
+    void operator=(const GFM& b);
 };
 
 #endif

@@ -38,4 +38,7 @@ build
 .vscode
 
 # shards
-*shards*
+*/shards/*
+
+# recover
+*/recover/*

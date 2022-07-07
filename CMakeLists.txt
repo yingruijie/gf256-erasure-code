@@ -37,3 +37,7 @@ add_executable(testec
     ./src/ec.cpp 
     ./example/testec.cpp
 )
+
+add_executable(rmshards
+    ./example/rmshards.cpp
+)
