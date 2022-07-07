@@ -16,6 +16,7 @@ int main(int argc, char** argv){
     int removenum=stoi(argv[2]); assert(removenum>=0);
     cout << "Will remove " << removenum << " shards!" << endl;;
     string shardsdir(argv[1]);
+    if(shardsdir[shardsdir.length()-1] == '/') shardsdir.pop_back();
     cout << "Reading shards dir: " << endl << shardsdir << endl;
 
     DIR *dir; struct dirent *diread;

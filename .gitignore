@@ -38,7 +38,7 @@ build
 .vscode
 
 # shards
-*/shards/*
+/run/data/shards/*
 
 # recover
-*/recover/*
+/run/data/recover/*
