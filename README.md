@@ -213,4 +213,5 @@ $ hexdump -C ./data/recover/20220708_200314
 0000002d
 ```
 
-* **另一个较大文件的例子**
+* **运行FILE1的过程**<br>
+在较大文件[./run/data/file/file1](./run/data/file/file1)上运行的过程请查看[RUN_FILE1.md](./RUN_FILE1.md)。

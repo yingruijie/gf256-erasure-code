@@ -1,4 +1,4 @@
-# 运行FILE1的过程
+# 运行./run/data/file/file1的过程
 * **编码**
 ```
 $ ./encode ./data/file/file1 20 13
