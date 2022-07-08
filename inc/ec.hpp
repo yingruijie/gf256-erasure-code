@@ -2,17 +2,21 @@
 #define _EC_HPP_
 
 #include <assert.h>
-#include <gfm.hpp>
+
 #include <string>
 #include <iostream>
 
 #include <dirent.h>
 #include <regex>
 #include <time.h>
+#include <fstream>
+#include <gfm.hpp>
+#include <utils.hpp>
 
 // 一些buffer的size
-#define BUFSIZE 256
-
+#define BUFSIZE 8192
+#define MAXK    50
+#define MAXN    100
 /**
 * @class EC ec.hpp
 * @brief 基于GF256的Erasure Code类
@@ -29,7 +33,7 @@ public:
     ~EC();
     void create_m(int n, int k);
 
-    void read_file(const char* filepath);
+    void read_file(const char* filepath, int n);
     void encode(int k);
     void write_shards(const char* shardsroot);
 

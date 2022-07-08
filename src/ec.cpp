@@ -12,7 +12,9 @@ EC::EC(void){
 */
 EC::~EC(){
     // 释放remain_indices内存
-    if(decoded) delete [] remain_indices;
+    if(decoded){
+        delete [] remain_indices;
+    }
 }
 
 
@@ -20,13 +22,13 @@ EC::~EC(){
 * @brief 创建EC的Vandermonde矩阵
 * @param n 数据量 N
 * @param k 纠错容量 K
-* @exception N: (0, 100) 否则报错
-* @exception K: (0, 50)  否则报错
+* @exception N: (0, MAXN) 否则报错
+* @exception K: (0, MAXK)  否则报错
 */
 void EC::create_m(int n,int k){
     N=n; K=k;
     // 限制N K大小
-    assert(0<N && N<100 && 0<K && K<50);
+    assert(0<N && N<=MAXN && 0<K && K<=MAXK);
     // 分配内存
     M.create(N+K, N);
     // 初始化前N行为单位矩阵
@@ -52,28 +54,32 @@ void EC::create_m(int n,int k){
 * @param filename 文件路径 例如 ./data/file/file0
 * @exception 路径存在且不为空文件
 */
-void EC::read_file(const char * filename){
+void EC::read_file(const char * filename, int n){
     cout << endl << "Input file path: " << endl << filename << endl;
-    ifstream fin;
-    fin.open(filename);
-	assert(fin.is_open());
 	
-	int buffer[BUFSIZE], len=0; char c;
-    memset(buffer, 0, sizeof(int)*BUFSIZE);
+	int len=0;
 
-    // 按char读取并存到buffer
-    cout << endl << "Get input string: " << endl << "========" << endl;
-	while ((c=fin.get())!=EOF){
-        buffer[len++] = (int)c;
-		cout << c;
-	}
-    cout << endl << "========" << endl;
-    assert(len > 0);
-    fin.close();
+    string rawstring = readFileIntoString(string(filename));
+
+    cout << endl << "Get input string: " << endl; 
+    cout << "========" << endl << rawstring << endl << "========" << endl;
+    len = rawstring.length();
+
+    assert(len > 0); 
+
     // 生成原始输入的GFM 列向量
-    raw.create(len, 1);
-    for(int i=0; i< len; i++){
-        GF me(buffer[i]); raw.M[i][0] = me;
+    int padsize, shardsize;
+    if(len % n) {padsize=n-(len%n); shardsize=(len+padsize)/n;}
+    cout << endl << "Data size = " << len << ", pad size = " << padsize
+    << ", shards size [N, B] = ["<< n << ", " << shardsize << "]" << endl;
+    
+    raw.create(n, shardsize);
+    int k = 0;
+    for(int i=0; i< n; i++){
+        for(int j=0; j<shardsize; j++){
+            if(k<len){GF me((uint8_t)rawstring[k++]); raw.M[i][j] = me;}
+            else {GF zero(0); raw.M[i][j] = zero;}
+        }
     }
     cout << endl << "Raw data GFM:" << endl;
     raw.show();
@@ -88,7 +94,7 @@ void EC::read_file(const char * filename){
 */
 void EC::encode(int k){
     N = raw.R; K = k;
-    assert(0<N && N<100 && 0<K && K<50);
+    assert(0<N && N<MAXN && 0<K && K<MAXK);
     // 创建矩阵
     create_m(N, K);
     // 编码
@@ -108,15 +114,8 @@ void EC::encode(int k){
 * @exception 必须先encode否则shards为空
 */
 void EC::write_shards(const char* shardsroot){
-    assert(encoded = true && shards.R>0 && shards.C==1);
-    // 获取当前时间
-    time_t t; 
-    tm* local;
-    char buf[128]= {0};  
-    t = time(NULL);
-    local = localtime(&t);
-    strftime(buf, 64, "%Y%m%d_%H%M%S", local);  
-    string shardsdir = string(shardsroot) + string("/") + string(buf) ;
+    assert(encoded = true && shards.R>0 && shards.C>0);
+    string shardsdir = string(shardsroot) + string("/") + get_datetime();
 
     // 通过命令的方式创建文件夹 
     // 例如./data/shards/20220706_195635
@@ -131,7 +130,9 @@ void EC::write_shards(const char* shardsroot){
         string filename(shardsdir);
         filename += string("/") + to_string(N) + "_" + to_string(K) + "_" + to_string(i);
         f.open(filename.c_str(), ios::out);
-        f << (char)shards.M[i][0].get_value();
+        for(int j=0; j<shards.C; j++){
+            f << (char)shards.M[i][j].get_value();
+        }
         f.close();
     }
 }
@@ -142,8 +143,7 @@ void EC::write_shards(const char* shardsroot){
 * @details 读取同时记录索引i到EC::remain_indices
 * @param shardsdir shards根目录
 * @exception 保证shardsdir可访问
-* @exception 每个shard的(N,K)必须相同 i->[0,N)且不重复
-* @exception 每个shard的大小为1个字节
+* @exception 每个shard的(N,K)和文件大小必须相同 i->[0,N)且不重复
 * @exception 剩余的数据量>=N 最终只读取N个shard
 */
 void EC::read_shards(const char* shardsdir){
@@ -156,7 +156,7 @@ void EC::read_shards(const char* shardsdir){
     assert((dir = opendir(shardsdir)) != nullptr);
 
     // 定义读取记录数组
-    int shardsN = 0, shardsK = 0, i=0, j=0, indices_read[BUFSIZE]; 
+    int shardsN=0, shardsK=0, shardSize=0, i=0, j=0, k=0, indices_read[BUFSIZE]; 
     GF buffer[BUFSIZE];
     memset(indices_read, 0, sizeof(int)*BUFSIZE);
 
@@ -181,53 +181,57 @@ void EC::read_shards(const char* shardsdir){
                 //更新迭代器位置
                 iter_begin = result[0].second;
             }
-            // 记录N K I
-            // cout << "n_k_i " << n_k_i[0] << " " << n_k_i[1] << " " << n_k_i[2] << endl;
-            if(i==0){
+            
+            // 读取这个shard
+            string shardstring = readFileIntoString(string(shardsdir) + string("/") + filename);
+
+            assert(shardstring.length() > 0); // 字符数量+一次EOF 
+
+            // 记录N K I shardsize  
+            if(i == 0){
                 shardsN = n_k_i[0]; shardsK = n_k_i[1];
-            }
+                shardSize = shardstring.length();
+            }   
             else{
+                // 保证所有shard都一致
+                // cout <<  "Shardsize: " << shardSize << " and " << shardstring.length() << endl;
+                assert(shardSize == shardstring.length());
                 assert(shardsN==n_k_i[0] && shardsK==n_k_i[1]);
             }
             indices_read[i] = n_k_i[2];
 
-            // 读取这个shard
-            ifstream fin;
-            // cout << "Read shard path: " << (shardsdir+filename).c_str()<< endl;
-            fin.open((string(shardsdir) + string("/") + filename).c_str());
-            assert(fin.is_open());
-            int thishardlen=0; char c[BUFSIZE];
-            while((c[thishardlen++]=fin.get())!=EOF){
-            }
-            fin.close();
-            // cout << "thishardlen " << thishardlen << endl;
-            assert(thishardlen == 2); // 一次字符，一次EOF   
-            
             // 记录到GF中
-            cout << "here: c = " << (uint8_t)c[0] << endl;
-            GF me((uint8_t)c[0]);
-            buffer[i] = me;
-
+            for(j=0; j<shardSize; j++){
+                GF me((uint8_t)shardstring[j]);
+                buffer[k++] = me;
+            }
             i++;
         } 
     }
     closedir(dir);
+
+    // 保证读取整块shard
+    assert(k%shardSize==0);
 
     int shardslen=i; 
     // 对 N K 赋值
     N = shardsN; K = shardsK;
     // 保证剩余的数据量shardslen>=N
     assert(N>0 && K>0 && shardslen>=N);
+
     remain_indices = new int [N];
 
-    remain_shards.create(N, 1);
+    remain_shards.create(N, shardSize);
 
     // 记录到EC中的数据结构
+    k=0;
     for(i=0; i<N; i++){
         remain_indices[i] = indices_read[i];
-        remain_shards.M[i][0] = buffer[i];
+        for(j=0; j<shardSize; j++){
+            remain_shards.M[i][j] = buffer[k++];
+        }
     }
-
+    decoded = true;
 }
 
 /**
@@ -254,8 +258,6 @@ void EC::decode(){
     recover = shardsgfmi.rdot(remain_shards);
     cout << endl << "Recover: " << endl;
     recover.show();
-
-    decoded = true;
 }
 
 /**
@@ -265,16 +267,19 @@ void EC::decode(){
 void EC::write_recover(const char* recoverpath){
     // 转化为string可视化
     cout << endl << "To string: " << endl;
-    char* recover_string = new char [N];
-    for(int i=0; i<N; i++){
-        recover_string[i] = (char)recover.M[i][0].get_value();
-        cout << recover_string[i];
+    char* recover_string = new char [recover.R * recover.C];
+    int k=0;
+    for(int i=0; i<recover.R; i++){
+        for(int j=0; j<recover.C; j++){
+            recover_string[k] = (char)recover.M[i][j].get_value();
+            cout << recover_string[k++];
+        }
     }
     cout << endl;
     cout << endl << "Write recover to: " << endl << recoverpath << endl;;
     // 写入recoverpath
     fstream f;
     f.open(recoverpath, ios::out);
-    for(int i=0; i<N; i++) f << recover_string[i];
+    for(int i=0; i<recover.R * recover.C; i++) f << recover_string[i];
     f.close();
 }

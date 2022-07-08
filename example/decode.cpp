@@ -27,7 +27,7 @@ int main(int argc, char **argv){
     ec.decode();
     // 写入recover
     ec.write_recover((recoverdir + string("/") + shardsdir.substr(pos+1)).c_str());
-    
+
     destory_table_256();
     return 0;
 }

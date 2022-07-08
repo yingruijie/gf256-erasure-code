@@ -16,6 +16,7 @@ include_directories(./inc/)
 # 语法：add_executable( 程序名 源代码文件 ）
 add_executable(encode
     ./src/table.cpp 
+    ./src/utils.cpp
     ./src/gf.cpp 
     ./src/gfm.cpp 
     ./src/ec.cpp 
@@ -23,7 +24,8 @@ add_executable(encode
 )
 
 add_executable(decode
-    ./src/table.cpp 
+    ./src/table.cpp
+    ./src/utils.cpp 
     ./src/gf.cpp 
     ./src/gfm.cpp 
     ./src/ec.cpp 
@@ -31,7 +33,8 @@ add_executable(decode
 )
 
 add_executable(testec
-    ./src/table.cpp 
+    ./src/table.cpp
+    ./src/utils.cpp 
     ./src/gf.cpp 
     ./src/gfm.cpp 
     ./src/ec.cpp 
@@ -39,5 +42,6 @@ add_executable(testec
 )
 
 add_executable(rmshards
+    ./src/utils.cpp
     ./example/rmshards.cpp
 )
