@@ -141,7 +141,7 @@ void GFM::mul_row(const int row, const GF mul){
 }
 
 /**
-* @brief GFM用伴随矩阵的方法取逆
+* @brief GFM用增广矩阵的方法取逆
 * @exception 必须先create
 * @exception R==C
 * @exception GFM为可逆矩阵
@@ -151,79 +151,79 @@ GFM GFM::inverse(void){
     if(R!=C){cout << "R!=C"; assert(R==C);}
     int N=R;
 
-    // 生成伴随矩阵
-    GFM adjoint; adjoint.create(N, 2*N);
+    // 生成增广矩阵
+    GFM augment; augment.create(N, 2*N);
     for(int i=0; i<N; i++){
         for(int j=0; j<N; j++){
-            adjoint.M[i][j]  = M[i][j];
+            augment.M[i][j]  = M[i][j];
         }
         for(int j=0; j<N; j++){
-            if(i==j){GF one(1); adjoint.M[i][N+j] = one;}
+            if(i==j){GF one(1); augment.M[i][N+j] = one;}
         }
     }
 
-    // cout << "adjoint" << endl;
-    // adjoint.show();
+    // cout << "augment" << endl;
+    // augment.show();
     // 两个常用的数 0 1
     GF zero(0); GF one(1);
 
-    // 按行开始将伴随矩阵左边化为单位矩阵
+    // 按行开始将增广矩阵左边化为单位矩阵
     for(int i=0; i<N; i++){
         // cout << endl << "====Enter i = " << i << "=====" << endl;
         // M[i][i]为0要向其它行找非0元素补上
-        if(adjoint.M[i][i] == zero){
-            // cout << "adjoint.M[" << i << "][ " << i << " ] == zero" << endl;
+        if(augment.M[i][i] == zero){
+            // cout << "augment.M[" << i << "][ " << i << " ] == zero" << endl;
             for(int k=i+1; k<N; k++){
                 if(k==i) continue;
                 // 发现非0元素
-                if(adjoint.M[k][i] != zero){
-                    // cout << "found adjoint.M[" << k << "][" << i << "] != zero" << endl;
+                if(augment.M[k][i] != zero){
+                    // cout << "found augment.M[" << k << "][" << i << "] != zero" << endl;
                     int sl[1] = {k};
-                    GFM sgfm = adjoint.select_rows(sl, 1);
-                    sgfm.mul_row(0, one / adjoint.M[k][i]);
+                    GFM sgfm = augment.select_rows(sl, 1);
+                    sgfm.mul_row(0, one / augment.M[k][i]);
                     // cout << "padding sgfm = " << endl;
                     // sgfm.show();
                     // 整行补上
-                    adjoint.add_row(i, sgfm);
+                    augment.add_row(i, sgfm);
                     break;
                 }
             }
         }
         // 找不到非0元素说明初始矩阵不可逆
-        if(adjoint.M[i][i] == zero){
+        if(augment.M[i][i] == zero){
             cout << "error padding" << endl;
-            assert(adjoint.M[i][i] == zero);
+            assert(augment.M[i][i] == zero);
         }
         // cout << "after padding" << endl;
-        // adjoint.show();
+        // augment.show();
         // 消去同i列的非0元素
         for(int k=0; k<N; k++){
             if(k==i) continue;
-            if(adjoint.M[k][i] == zero) continue;
+            if(augment.M[k][i] == zero) continue;
             int sl[1] = {i};
-            GFM sgfm = adjoint.select_rows(sl, 1);
+            GFM sgfm = augment.select_rows(sl, 1);
             // 高斯消元法
-            sgfm.mul_row(0, adjoint.M[k][i] / adjoint.M[i][i]);
+            sgfm.mul_row(0, augment.M[k][i] / augment.M[i][i]);
             // cout << "sgfm k=" << k << endl;
             // sgfm.show();
-            adjoint.add_row(k, sgfm);
+            augment.add_row(k, sgfm);
 
         }
         // 对角元素归一
-        adjoint.mul_row(i, one/adjoint.M[i][i]);
+        augment.mul_row(i, one/augment.M[i][i]);
 
         // cout << "i = " << i << " final" << endl;
-        // adjoint.show();
+        // augment.show();
         // cout << "=====end of i = " << i << "=====" << endl << endl;
 
     }
 
     // cout << "final" << endl;
-    // adjoint.show();
-    // 取处理过后的伴随矩阵的右半边 即为原矩阵的逆
+    // augment.show();
+    // 取处理过后的增广矩阵的右半边 即为原矩阵的逆
     int cols[N];
     for(int j=0; j<N;j++) cols[j] = N+j;
-    GFM res = adjoint.select_cols(cols, N);
+    GFM res = augment.select_cols(cols, N);
     // cout << "Inverse = " << endl;
     // res.show();
 
